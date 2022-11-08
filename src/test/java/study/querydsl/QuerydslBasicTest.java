@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
@@ -93,6 +96,44 @@ public class QuerydslBasicTest {
         // ","를 사용하여 and 연산을 할 수 있다.
         assertEquals(findMember.getUsername(), "member1");
         assertEquals(findMember.getAge(), 10);
+    }
+
+    @Test
+    public void fetchTypeTest(){
+        List<Member> fetch = jpaQueryFactory
+                .selectFrom(member)
+                .fetch();
+
+        Member fetchOne = jpaQueryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        Member fetchFirst = jpaQueryFactory
+                .selectFrom(member)
+                .fetchFirst();
+
+        //쿼리가 총 2방 나감 -> 총 개수 세는 쿼리, member 찾는 쿼리
+        QueryResults<Member> results = jpaQueryFactory
+                .selectFrom(member)
+                .fetchResults();
+
+        long total = results.getTotal();
+        System.out.println("total = " + total);
+
+        System.out.println("-----------------------");
+
+        List<Member> contents = results.getResults();
+        for (Member content : contents) {
+            System.out.println("content = " + content);
+        }
+
+        long count = jpaQueryFactory
+                .selectFrom(member)
+                .fetchCount();
+        System.out.println("count = " + count);
+
+
     }
 
 }
