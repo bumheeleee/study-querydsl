@@ -132,6 +132,34 @@ public class QuerydslBasicTest {
                 .selectFrom(member)
                 .fetchCount();
         System.out.println("count = " + count);
+    }
+
+    /**
+     * 회원 정렬 순서
+     * 1. 회원 나이 내림차순 (desc)
+     * 2. 회원 이름 올림차순 (asc)
+     * 단 2에서 회원이름이 없으면(null) 마지막에 출력(nulls last)
+     */
+    @Test
+    public void sortTest(){
+        em.persist(new Member(null, 100));
+        em.persist(new Member("member5", 100));
+        em.persist(new Member("member6", 100));
+
+        List<Member> results = jpaQueryFactory
+                .selectFrom(member)
+                .where(member.age.eq(100))
+                .orderBy(member.age.desc(), member.username.asc().nullsLast())
+                .fetch();
+
+        Member member5 = results.get(0);
+        Member member6 = results.get(1);
+        Member memberNull = results.get(2);
+
+        assertEquals(member5.getUsername(), "member5");
+        assertEquals(member6.getUsername(), "member6");
+        assertEquals(memberNull.getUsername(), null);
+
 
 
     }
