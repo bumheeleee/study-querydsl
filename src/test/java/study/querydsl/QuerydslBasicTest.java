@@ -159,9 +159,39 @@ public class QuerydslBasicTest {
         assertEquals(member5.getUsername(), "member5");
         assertEquals(member6.getUsername(), "member6");
         assertEquals(memberNull.getUsername(), null);
+    }
+    
+    @Test
+    public void pageTest1(){
+        List<Member> results = jpaQueryFactory
+                .selectFrom(member)
+                .orderBy(member.username.asc())
+                .offset(0)      // offset : 시작지점
+                .limit(2)       // limit :  페이지 사이즈
+                .fetch();
 
+        for (Member result : results) {
+            System.out.println("result.getUsername() = " + result.getUsername());
+        }
+        assertEquals(results.size(), 2);
+        assertEquals(results.get(0).getUsername(), "member1");
+        assertEquals(results.get(1).getUsername(), "member2");
+    }
 
+    @Test
+    public void pageTest2(){
+        QueryResults<Member> results = jpaQueryFactory
+                .selectFrom(member)
+                .orderBy(member.username.asc())
+                .offset(0)      // offset : 시작지점
+                .limit(2)       // limit :  페이지 사이즈
+                .fetchResults();
 
+        List<Member> contents = results.getResults();
+        long total = results.getTotal();
+
+        assertEquals(contents.size(), 2);
+        assertEquals(total,4);
     }
 
 }
