@@ -65,4 +65,34 @@ public class QuerydslBasicTest {
         assertEquals(member1.getUsername(), "member1");
     }
 
+    @Test
+    public void search(){
+        Member findMember = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(member.username.eq("member1")
+                        .and(member.age.eq(10))
+                )
+                .fetchOne();
+
+        assertEquals(findMember.getUsername(), "member1");
+        assertEquals(findMember.getAge(), 10);
+    }
+
+    @Test
+    public void searchParam(){
+        Member findMember = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(
+                        member.username.eq("member1"),
+                        member.age.eq(10)
+                )
+                .fetchOne();
+
+        // ","를 사용하여 and 연산을 할 수 있다.
+        assertEquals(findMember.getUsername(), "member1");
+        assertEquals(findMember.getAge(), 10);
+    }
+
 }
