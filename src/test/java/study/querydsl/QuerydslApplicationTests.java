@@ -34,4 +34,12 @@ class QuerydslApplicationTests {
 		assertEquals(result.getId(), hello.getId());
 	}
 
+	@Test
+	void test(){
+		Hello hello = new Hello();
+		Hello hello2 = new Hello();
+		em.persist(hello);
+		em.persist(hello2);
+	}
+
 }
