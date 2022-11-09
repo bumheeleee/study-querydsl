@@ -21,6 +21,7 @@ import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
 import static study.querydsl.entity.QTeam.team;
@@ -362,7 +363,7 @@ public class QuerydslBasicTest {
         em.persist(new Member("teamC"));
 
         // when
-        // on 절에 걸어서 null 조건도 다 출력된다
+        // leftJoin -> on 절에 걸어서 null 조건도 다 출력된다
         List<Tuple> result = jpaQueryFactory
                 .select(member, team)
                 .from(member)
@@ -424,14 +425,77 @@ public class QuerydslBasicTest {
                 .select(member)
                 .from(member)
                 .where(member.age.eq(
-                        JPAExpressions
-                                .select(memberSub.age.max())
+                        select(memberSub.age.max())
                                 .from(memberSub)
                 ))
                 .fetchOne();
 
         System.out.println("findMember = " + findMember);
+    }
 
+    /**
+     * 서브 쿼리
+     * 나이가 평균 이상인 회원
+     */
+    @Test
+    void subQueryTest2() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> members = jpaQueryFactory
+                .selectFrom(member)
+                .where(member.age.goe(
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertEquals(members.size(), 2);
+        for (Member member1 : members) {
+            System.out.println("member1 = " + member1);
+        }
+    }
+
+    /**
+     * 서브 쿼리
+     * 여러 건 처리 , in 사용
+     */
+    @Test
+    void subQueryTest3() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> members = jpaQueryFactory
+                .selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10))
+                ))
+                .fetch();
+
+        assertEquals(members.size(), 3);
+        for (Member member1 : members) {
+            System.out.println("member1 = " + member1);
+        }
+    }
+
+    /**
+     * select 절에서의 subQuery
+     */
+    @Test
+    void selectSubQuery() {
+        // given
+        QMember memberSub = new QMember("memberSub");
+
+        List<Tuple> result = jpaQueryFactory
+                .select(member.username,
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                ).from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
     }
 
 }
