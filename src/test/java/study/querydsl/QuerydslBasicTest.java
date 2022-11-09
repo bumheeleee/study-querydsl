@@ -3,6 +3,7 @@ package study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -238,5 +239,135 @@ public class QuerydslBasicTest {
         // then
         System.out.println("team1 = " + team1);
         System.out.println("team2 = " + team2);
+    }
+
+    /**
+     * 팀 A에 소속된 모든 회원을 조회
+     * join() , innerJoin() : 내부 조인(inner join)
+     * leftJoin() : left 외부 조인(left outer join)
+     * rightJoin() : rigth 외부 조인(rigth outer join)
+     */
+    @Test
+    void joinTest() {
+        // given
+        List<Member> members = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .groupBy(member.username)
+                .fetch();
+
+        // when
+        Member member1 = members.get(0);
+        Member member2 = members.get(1);
+
+        // then
+        assertEquals(members.size(), 2);
+        assertEquals(member1.getUsername(), "member1");
+        assertEquals(member2.getUsername(), "member2");
+
+        Assertions.assertThat(members)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+    }
+
+    /**
+     * 세타 조인 (연관관계가 전혀 없는데도 조인이 가능하다.)
+     * 회원의 이름과 팀의 이름이 같은 회원 조회
+     */
+    @Test
+    void thetaJoin() {
+        // given
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        // when
+        List<Member> result = jpaQueryFactory
+                .select(member)
+                .from(member, team)
+                .where(member.username.eq(team.name))
+                .fetch();
+
+        // then
+        assertEquals(result.size(), 2);
+        Assertions.assertThat(result)
+                .extracting("username")
+                .containsExactly("teamA", "teamB");
+
+        for (Member member1 : result) {
+            System.out.println("member1 = " + member1);
+        }
+    }
+
+    /**
+     * 예) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
+     * jpql: select m, t from Member m left join m.team t on t.name = "teamA"
+     */
+    @Test
+    void joinOnFiltering() {
+        // given
+        //on 조건으로 하게되면, leftJoin 영향을 고대로 받아서 null 값도 고대로 출력한다.
+        List<Tuple> results1 = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team)
+                .on(team.name.eq("teamA"))
+                .fetch();
+
+        //where 조건으로 하게되면, where 조건으로 일치하는 것만 가져온다. (null 조건은 안가져온다.)
+        List<Tuple> results2 = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        //inner join을 하게되면 이미 null값은 버려서 where에 조건을 주거나, on에 조건을 주는것은 동일하다.
+        List<Tuple> results3 = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        // when
+        for (Tuple result1 : results1) {
+            System.out.println("result1 = " + result1);
+        }
+        System.out.println("========================");
+        for (Tuple result2 : results2) {
+            System.out.println("result2 = " + result2);
+        }
+        System.out.println("========================");
+        for (Tuple result3 : results2) {
+            System.out.println("result3= " + result3);
+        }
+    }
+
+    /**
+     * 연관관계가 없는 엔티티 외부조인(막 조인)
+     * 회원의 이름이 팀 이름과 같은 대상 외부 조인
+     */
+    @Test
+    void joinOnNoRelation() {
+        // given
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        // when
+        // on 절에 걸어서 null 조건도 다 출력된다
+        List<Tuple> result = jpaQueryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team).on(member.username.eq(team.name))
+                .fetch();
+
+        // then
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
     }
 }
