@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
+import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
@@ -408,4 +410,28 @@ public class QuerydslBasicTest {
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
         assertEquals(loaded, true);
     }
+
+    /**
+     * 서브 쿼리
+     * com.querydsl.jpa.JPAExpressions 사용
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    void subQueryTest() {
+        QMember memberSub = new QMember("memberSub");
+
+        Member findMember = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(member.age.eq(
+                        JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub)
+                ))
+                .fetchOne();
+
+        System.out.println("findMember = " + findMember);
+
+    }
+
 }
