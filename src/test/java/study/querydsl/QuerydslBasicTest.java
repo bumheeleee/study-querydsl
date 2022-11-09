@@ -1,6 +1,7 @@
 package study.querydsl;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
-import study.querydsl.entity.QMember;
+import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
@@ -17,6 +18,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
+import static study.querydsl.entity.QTeam.team;
 
 @SpringBootTest
 @Transactional
@@ -194,4 +196,47 @@ public class QuerydslBasicTest {
         assertEquals(total,4);
     }
 
+    /**
+     * 집합함수의 총 모음
+     */
+    @Test
+    public void aggregationTest(){
+        List<Tuple> results = jpaQueryFactory
+                .select(member.count(),
+                        member.age.sum(),
+                        member.age.avg(),
+                        member.age.max(),
+                        member.age.min())
+                .from(member)
+                .fetch();
+
+        Tuple result = results.get(0);
+        System.out.println("result.get(member.count()) = " + result.get(member.count()));
+        System.out.println("result.get(member.age.sum()) = " + result.get(member.age.sum()));
+        System.out.println("result.get(member.age.avg()) = " + result.get(member.age.avg()));
+        System.out.println("result.get(member.age.max()) = " + result.get(member.age.max()));
+        System.out.println("result.get(member.age.min()) = " + result.get(member.age.min()));
+    }
+
+    /**
+     * 팀의 이름과 각 팀의 평균 연령을 구하기
+     */
+    @Test
+    void group() {
+        // given
+        List<Tuple> result = jpaQueryFactory
+                .select(team.name, member.age.avg())
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .fetch();
+
+        // when
+        Tuple team1 = result.get(0);
+        Tuple team2 = result.get(1);
+
+        // then
+        System.out.println("team1 = " + team1);
+        System.out.println("team2 = " + team2);
+    }
 }
