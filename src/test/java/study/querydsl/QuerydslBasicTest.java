@@ -33,17 +33,12 @@ public class QuerydslBasicTest {
     @PersistenceContext
     EntityManager em;
 
-    @Autowired
-    public QuerydslBasicTest(JPAQueryFactory jpaQueryFactory) {
-        this.jpaQueryFactory = jpaQueryFactory;
-    }
-
-    private final JPAQueryFactory jpaQueryFactory;
-
-
+    private JPAQueryFactory jpaQueryFactory;
 
     @BeforeEach
     public void before() {
+        jpaQueryFactory = new JPAQueryFactory(em);
+
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
 
@@ -154,6 +149,7 @@ public class QuerydslBasicTest {
      * 1. 회원 나이 내림차순 (desc)
      * 2. 회원 이름 올림차순 (asc)
      * 단 2에서 회원이름이 없으면(null) 마지막에 출력(nulls last)
+     * jpql : select m from Member m order by m.age desc and m.username asc nulls last
      */
     @Test
     public void sortTest(){
@@ -214,6 +210,7 @@ public class QuerydslBasicTest {
      */
     @Test
     public void aggregationTest(){
+        //데이터 타입이 이렇게 여러개인경우 -> tuple 사용!
         List<Tuple> results = jpaQueryFactory
                 .select(member.count(),
                         member.age.sum(),
@@ -248,6 +245,7 @@ public class QuerydslBasicTest {
         Tuple team1 = result.get(0);
         Tuple team2 = result.get(1);
 
+        System.out.println("result = " + result);
         // then
         System.out.println("team1 = " + team1);
         System.out.println("team2 = " + team2);
@@ -275,6 +273,7 @@ public class QuerydslBasicTest {
         Member member2 = members.get(1);
 
         // then
+        System.out.println("members = " + members);
         assertEquals(members.size(), 2);
         assertEquals(member1.getUsername(), "member1");
         assertEquals(member2.getUsername(), "member2");
@@ -296,6 +295,7 @@ public class QuerydslBasicTest {
         em.persist(new Member("teamC"));
 
         // when
+        //모든 member 테이블과 모든 team 테이블의 데이터를 조인한다. 그다음 where 조건
         List<Member> result = jpaQueryFactory
                 .select(member)
                 .from(member, team)
@@ -321,7 +321,7 @@ public class QuerydslBasicTest {
     void joinOnFiltering() {
         // given
         //on 조건으로 하게되면, leftJoin 영향을 고대로 받아서 null 값도 고대로 출력한다.
-        List<Tuple> results1 = jpaQueryFactory
+        List<Tuple> outerOnResults = jpaQueryFactory
                 .select(member, team)
                 .from(member)
                 .leftJoin(member.team, team)
@@ -329,7 +329,7 @@ public class QuerydslBasicTest {
                 .fetch();
 
         //where 조건으로 하게되면, where 조건으로 일치하는 것만 가져온다. (null 조건은 안가져온다.)
-        List<Tuple> results2 = jpaQueryFactory
+        List<Tuple> outerWhereResults = jpaQueryFactory
                 .select(member, team)
                 .from(member)
                 .leftJoin(member.team, team)
@@ -337,7 +337,7 @@ public class QuerydslBasicTest {
                 .fetch();
 
         //inner join을 하게되면 이미 null값은 버려서 where에 조건을 주거나, on에 조건을 주는것은 동일하다.
-        List<Tuple> results3 = jpaQueryFactory
+        List<Tuple> innerJoinResults = jpaQueryFactory
                 .select(member, team)
                 .from(member)
                 .join(member.team, team)
@@ -345,16 +345,14 @@ public class QuerydslBasicTest {
                 .fetch();
 
         // when
-        for (Tuple result1 : results1) {
-            System.out.println("result1 = " + result1);
+        for (Tuple outerOnResult : outerOnResults) {
+            System.out.println("outerOnResult = " + outerOnResult);
         }
-        System.out.println("========================");
-        for (Tuple result2 : results2) {
-            System.out.println("result2 = " + result2);
+        for (Tuple outerWhereResult : outerWhereResults) {
+            System.out.println("outerWhereResult = " + outerWhereResult);
         }
-        System.out.println("========================");
-        for (Tuple result3 : results2) {
-            System.out.println("result3= " + result3);
+        for (Tuple innerJoinResult : innerJoinResults) {
+            System.out.println("innerJoinResult = " + innerJoinResult);
         }
     }
 
