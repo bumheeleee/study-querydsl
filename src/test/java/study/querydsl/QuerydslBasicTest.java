@@ -17,6 +17,7 @@ import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceUnit;
 
 import java.util.List;
@@ -29,14 +30,20 @@ import static study.querydsl.entity.QTeam.team;
 @SpringBootTest
 @Transactional
 public class QuerydslBasicTest {
-    @Autowired
+    @PersistenceContext
     EntityManager em;
-    JPAQueryFactory jpaQueryFactory;
+
+    @Autowired
+    public QuerydslBasicTest(JPAQueryFactory jpaQueryFactory) {
+        this.jpaQueryFactory = jpaQueryFactory;
+    }
+
+    private final JPAQueryFactory jpaQueryFactory;
+
+
 
     @BeforeEach
     public void before() {
-        jpaQueryFactory = new JPAQueryFactory(em);
-
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
 
