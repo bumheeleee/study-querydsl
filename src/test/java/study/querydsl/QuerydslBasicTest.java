@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
@@ -503,4 +505,66 @@ public class QuerydslBasicTest {
         }
     }
 
+    @Test
+    void basicCaseTest() {
+        // given
+        List<String> results = jpaQueryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        // then
+        for (String result : results) {
+            System.out.println("result = " + result);
+        }
+    }
+
+    @Test
+    void complexCaseTest() {
+        // given
+        List<String> results = jpaQueryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(10, 20)).then("10~20살")
+                        .when(member.age.between(20, 30)).then("20~30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        // then
+        for (String result : results) {
+            System.out.println("result = " + result);
+        }
+    }
+
+    @Test
+    void constantPlusTest() {
+        // given
+        List<Tuple> results = jpaQueryFactory
+                .select(member.age, Expressions.constant("lee"))
+                .from(member)
+                .fetch();
+
+        // then
+        for (Tuple result : results) {
+            System.out.println("result = " + result);
+        }
+    }
+
+    @Test
+    void concatTest() {
+        // given
+        // {username}_{age}
+        List<String> results = jpaQueryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .fetch();
+
+        // then
+        for (String result : results) {
+            System.out.println("result = " + result);
+        }
+    }
 }
